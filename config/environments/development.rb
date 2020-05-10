@@ -12,6 +12,15 @@ Rails.application.configure do
   # Show full error reports.
   config.consider_all_requests_local = true
 
+  # whitelist docker ip address in console
+  if File.read('/proc/1/cgroup').include?('docker')
+    # https://stackoverflow.com/a/24716645/4862360
+    host_ip = `/sbin/ip route|awk '/default/ { print $3 }'`.strip
+
+    BetterErrors::Middleware.allow_ip!(host_ip) if defined?(BetterErrors::Middleware)
+    config.web_console.whitelisted_ips = host_ip
+  end
+
   # Enable/disable caching. By default caching is disabled.
   # Run rails dev:cache to toggle caching.
   if Rails.root.join('tmp', 'caching-dev.txt').exist?
@@ -58,5 +67,5 @@ Rails.application.configure do
 
   # Use an evented file watcher to asynchronously detect changes in source code,
   # routes, locales, etc. This feature depends on the listen gem.
-  config.file_watcher = ActiveSupport::EventedFileUpdateChecker
+  config.file_watcher = ActiveSupport::FileUpdateChecker
 end
